@@ -37,8 +37,9 @@ class CommentController extends Controller
     {
         // コメントを投稿した画像のidで検索をかけて、一致したコメントのみ表示
         // その際、usersテーブルのidと、$commentsのuserIdが一致するテーブル同士を結合して、selectで必要なデータのみ取得
+        // paginateで件数を指定する
         $comments = Comment::where('postId', $request->id)->join('users','users.id','=','comments.userId')->
-                    select('comments.*','users.name','users.icon')->orderBy('created_at', 'asc')->get();
+                    select('comments.*','users.name','users.icon')->orderBy('created_at', 'desc')->paginate(10);
 
         return $comments;
     }

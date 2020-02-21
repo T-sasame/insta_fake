@@ -24,8 +24,9 @@ class InstaController extends Controller
         $user = Auth::user();
         //ユーザーのidで検索をかけ、一致した画像のみ表示
         //その際、usersテーブルのidと、$postsのuserIdが一致するテーブル同士を結合して、selectで必要なデータのみ取得
+        //paginateで件数を指定、結果をjson形式で返す
         $posts = Post::where('userId', $user->id)->join('users','users.id','=','posts.userId')->
-                       select('posts.*','users.name')->orderBy('created_at', 'desc')->get();
+                       select('posts.*','users.name')->orderBy('created_at', 'desc')->paginate(6)->toJson();
 
         //フォローとフォロワーの人数を取得
         $followcount = Follow::where('followerId', $user->id)->count();
@@ -182,8 +183,10 @@ class InstaController extends Controller
 
         //URLパラメータの$nameで検索をかけ、一致した画像のみ表示
         //その際、usersテーブルのidと、postsテーブルのuserIdが一致するテーブル同士を結合して、selectで必要なデータのみ取得
+        //paginateで件数を指定、結果をjson形式で返す
         $posts = User::where('name', $name)->join('posts','posts.userId','=','users.id')->
-                       select('posts.*','users.name')->orderBy('created_at', 'desc')->get();
+                       select('posts.*','users.name')->orderBy('created_at', 'desc')->paginate(6)->toJson();
+
         //ユーザーページ毎のユーザーデータを$othersに取得
         $others = User::where('name', $name)->first();
 
@@ -251,5 +254,17 @@ class InstaController extends Controller
                              select('follows.*','users.name', 'users.icon')->get();
 
         return $followers;
+    }
+
+    //投稿画像一覧を取得
+    public function get_post(Request $request)
+    {
+        //ユーザーのidで検索をかけ、一致した画像のみ表示
+        //その際、usersテーブルのidと、$postsのuserIdが一致するテーブル同士を結合して、selectで必要なデータのみ取得
+        //paginateで件数を指定、結果をjson形式で返す
+        $posts = Post::where('userId', $request->id)->join('users','users.id','=','posts.userId')->
+                       select('posts.*','users.name')->orderBy('created_at', 'desc')->paginate(6)->toJson();
+
+        return $posts;
     }
 }

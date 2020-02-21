@@ -24,7 +24,6 @@
     <body>
         <div class="website-name">
             <h1>ゲーム特化インスタ</h1>
-            <p>〜現在製作中〜</p>
         </div>
         <div id="app">
             {{-- 画面上部に表示するナビゲーションバー --}}

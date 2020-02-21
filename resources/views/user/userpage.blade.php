@@ -61,11 +61,13 @@
         <!-- :userについては、上記のfollowsコンポーネントと同じ処理をしている -->
         @guest
             <posts :posts = "{{ $posts }}"
-                   :user = " '' ">
+                   :user = " '' "
+                   :others = "{{ $others->id }}">
             </posts>
         @else
             <posts :posts = "{{ $posts }}"
-                   :user = "{{ $user }}">
+                   :user = "{{ $user }}"
+                   :others = "{{ $others->id }}">
             </posts>
         @endguest
     </div>

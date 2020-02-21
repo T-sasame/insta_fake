@@ -8,6 +8,18 @@ require('./bootstrap');
 
 window.Vue = require('vue');
 
+import InfiniteLoading from 'vue-infinite-loading';
+Vue.use(InfiniteLoading, {
+    slots: {
+        noMore: '',
+        noResults: '', // you also can pass a Vue component as a slot
+    },
+    props: {
+        spinner: 'spiral',
+    },
+});
+Vue.component('infiniteLoading', require('vue-infinite-loading'));
+
 /**
  * The following block of code may be used to automatically register your
  * Vue components. It will recursively scan this directory for the Vue

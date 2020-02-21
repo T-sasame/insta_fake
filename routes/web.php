@@ -34,4 +34,6 @@ Route::post('data/comments', 'User\CommentController@get_comment');
 Route::post('data/goods', 'User\CommentController@get_good');
 Route::post('data/follows', 'User\InstaController@get_follow');
 Route::post('data/followers', 'User\InstaController@get_follower');
+Route::post('data/posts', 'User\InstaController@get_post');
+Route::get('data/posts/top', 'MainController@get_post_top');
 Route::get('userpage/{name}', 'User\InstaController@open_userpage');

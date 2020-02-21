@@ -15,7 +15,7 @@
 
                             <!-- v-showを使い、コメント無しならnullComment、それ以外はshowCommentを表示 -->
                             <p v-show="nullComment">{{ allComments }}</p>
-                            <div class="comments row" v-show="showComment" v-for="allComment in allComments" :key="allComment.id">
+                            <div class="comments row" v-show="showComment" v-for="allComment in allComments.data" :key="allComment.id">
                                 <div class="comment_icon col-md-2">
                                     <img :src="allComment.icon">
                                 </div>
@@ -23,6 +23,8 @@
                                     <p><a :href=" '/userpage/' + allComment.name">{{ allComment.name }}</a> : {{ allComment.comment }}</p>
                                 </div>
                             </div>
+                            <!-- vue-infinite-loadingを使い、laravelのpaginationで指定された件数毎に読み込む -->
+                            <infinite-loading :identifier="identifier" @infinite="infiniteHandler" :distance=0></infinite-loading>
                         </div>
                         <hr color="#c0c0c0">
 
@@ -71,11 +73,12 @@ export default {
         'postItem',
         'commentAll',
         'goodCount',
-        'user'
+        'user',
+        'page'
     ],
     data() {
         return {
-            allComments: '',
+            allComments: [],
             countGood: '',
             goodError: false,
             comment: '',
@@ -85,12 +88,14 @@ export default {
             openComment: false,
             commentBtn: true,
             goodBtn: false,
+            beforeGood: true,
+            afterGood: false,
+            modalPage: '',
+            identifier: 1,
             // コメント・いいね！アイコンのURLを変数に格納
             imgGood: 'https://s3-ap-northeast-1.amazonaws.com/sasame.images/good.png',
             imgGoodAfter: 'https://s3-ap-northeast-1.amazonaws.com/sasame.images/goodafter.png',
-            imgComment: 'https://s3-ap-northeast-1.amazonaws.com/sasame.images/comment.png',
-            beforeGood: true,
-            afterGood: false
+            imgComment: 'https://s3-ap-northeast-1.amazonaws.com/sasame.images/comment.png'
         }
     },
     methods: {
@@ -114,6 +119,8 @@ export default {
                     this.allComments = res.data;
                     this.nullComment = false;  //v-showのコメントフィールド(nullとshow)を切り替え
                     this.showComment = true;
+                    this.modalPage = this.page + 1;  //paginateページ数を初期化
+                    this.identifier += 1;  //identifierの値を変えることで、infinite-loadingをリセット
                 });
             })
             .catch((error) => {
@@ -139,14 +146,32 @@ export default {
                 this.goodBtn = true;
                 this.beforeGood = false;
                 this.afterGood = true;
-                // console.log(error);
+            });
+        },
+        // 要素の最下部までスクロールした際の、infinite-loadingの処理
+        infiniteHandler($state) {
+            var params = {
+                id: this.postItem.id,
+            };
+            axios.post('/data/comments?page=' + this.modalPage, params)
+            .then(res => {
+                if(this.modalPage <= res.data.last_page) {
+                    this.modalPage += 1;
+                    this.allComments.data.push(...res.data.data);
+                    $state.loaded();  //読み込みの継続
+                } else {
+                    $state.complete();  //読み込みの終了
+                }
+            })
+            .catch((error) => {
+                $state.complete();
             });
         }
     },
     watch: {
         // watchを使い、propsで渡ってきたデータ"commentAll"の変更を監視する。値は"allComments"に格納
         'commentAll': function() {
-            if(this.commentAll == '') {
+            if(this.commentAll.data == '') {
                 this.nullComment = true;  //v-showのコメントフィールド(nullとshow)を切り替え
                 this.showComment = false;
                 this.allComments = 'コメントはまだありません';
@@ -155,12 +180,17 @@ export default {
                 this.showComment = true;
                 this.allComments = this.commentAll;
             }
+            // paginateのページ数と、infinite-loadingの両方を初期化
+            this.modalPage = this.page + 1;
+            this.identifier += 1;
         },
+
         // propsのデータ"goodCount"の変更を監視。いいね！の総数は"countGood"に格納
         'goodCount': function() {
             this.countGood = this.goodCount;
             this.goodError = false;  //v-show="goodError"の初期化
         },
+        
         // コメントフォームの入力値を監視して、フロント側でのバリデーションを行う
         'comment': function() {
             // コメントが空っぽ、又は最大文字数の255を超えた場合、エラーメッセージを表示し送信ボタンの機能停止

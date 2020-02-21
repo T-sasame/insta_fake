@@ -1,9 +1,9 @@
 <template>
     <div class="container">
         <div class="row">
-            <div class="col-md-12">
+            <div class="postsMypage col-md-12">
                 <div class="row">
-                    <div class="col-md-4" v-for="(post,index) in childPosts" :key="post.id">
+                    <div class="col-md-4" v-for="(post,index) in childPosts.data" :key="post.id">
                         <div class="image">
                             <!-- 画像をクリックするとモーダルウィンドウがポップアップ -->
                             <img :src="post.image" v-on:click="openModal(post)">
@@ -25,9 +25,12 @@
                                    :postItem = "postItem"
                                    :commentAll = "commentAll"
                                    :goodCount = "goodCount"
-                                   :user = "user.id">
+                                   :user = "user.id"
+                                   :page = "page">
                         </postmodal>
                     </div>
+                    <!-- vue-infinite-loadingを使い、laravelのpaginationで指定された件数毎に読み込む -->
+                    <infinite-loading @infinite="infinite" :distance=0></infinite-loading>
                 </div>
             </div>
         </div>
@@ -53,7 +56,9 @@ export default {
             postItem: '',
             commentAll: '',
             goodCount: '',
-            showContent: false
+            showContent: false,
+            page: '',
+            postsPage: 2
         }
     },
 
@@ -66,7 +71,7 @@ export default {
             var params = {
                 id: post.id
             };
-            axios.post('/data/comments', params)
+            axios.post('/data/comments?page=1', params)
             .then(res => {
                 this.commentAll = res.data;
 
@@ -83,7 +88,9 @@ export default {
                 console.log(error);
             });
             // 表示する際は画像毎のデータをpostItemに格納
+            // paginateのページ数を判断する為、this.page = 1をする
             this.postItem = post;
+            this.page = 1;
             this.showContent = true;
         },
         closeModal: function() {
@@ -92,6 +99,7 @@ export default {
             this.postItem = '';
             this.goodCount = '';
             this.showContent = false;
+            this.page = '';
         },
         //投稿画像を削除するメソッド
         postDelete(post, index) {
@@ -110,6 +118,25 @@ export default {
                     console.log(error);
                 });
             }
+        },
+        // 要素の最下部までスクロールした際の、infinite-loadingの処理
+        infinite($state) {
+            var params = {
+                id: this.user.id,
+            };
+            axios.post('/data/posts?page=' + this.postsPage, params)
+            .then(res => {
+                if(this.postsPage <= res.data.last_page) {
+                    this.postsPage += 1;
+                    this.childPosts.data.push(...res.data.data);
+                    $state.loaded();  //読み込みの継続
+                } else {
+                    $state.complete();  //読み込みの終了
+                }
+            })
+            .catch((error) => {
+                $state.complete();
+            });
         }
     },
     mounted: function() {
